@@ -2,10 +2,6 @@
       use, intrinsic :: iso_c_binding
       implicit double precision (a-h,o-z)
       common /arrays/ na,nf
-      interface
-      subroutine init() bind (c)
-      end subroutine init
-      end interface
 
       allocatable :: q(:),z(:),dvdq(:)
 
@@ -36,7 +32,7 @@ c     methane
       z(4) = 1
       z(5) = 1
      
-      call init()
+      call finit()
       print *,"TESTING SUBROUTINE" 
       call pot(q,z,v,dvdq)
       print *,"Energy:"
