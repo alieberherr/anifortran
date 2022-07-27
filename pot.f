@@ -4,6 +4,8 @@
         common /arrays/ na,nf
         dimension q(nf),z(na),dvdq(nf),res(nf+1)
 c
+c       Calculate potential by evaluating the NN ANI
+c
         interface
           subroutine test_ani(q_c,n,z_c,m,res_c,l) bind (c)
           use iso_c_binding

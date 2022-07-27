@@ -2,14 +2,17 @@
       use, intrinsic :: iso_c_binding
       implicit double precision (a-h,o-z)
       common /arrays/ na,nf
-
       allocatable :: q(:),z(:),dvdq(:)
-
+c
+c     Test the subroutines for evaluating the NN
+c
       na = 5
       nf = 3*na     
- 
       allocate(q(nf),z(na),dvdq(nf))
-c     methane
+c
+c     initialise a geometry for methane and the
+c     atomic numbers
+c
       q(1) = 0.03192167
       q(2) = 0.00638559
       q(3) = 0.01301679
@@ -25,7 +28,6 @@ c     methane
       q(13) = 0.66091919
       q(14) = -0.16799635
       q(15) = -0.91037834
-
       z(1) = 6
       z(2) = 1
       z(3) = 1
@@ -33,7 +35,6 @@ c     methane
       z(5) = 1
      
       call finit()
-      print *,"TESTING SUBROUTINE" 
       call pot(q,z,v,dvdq)
       print *,"Energy:"
       print "(f20.10)",v

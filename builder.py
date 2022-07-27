@@ -26,15 +26,19 @@ def init():
 
 @ffi.def_extern()
 def test_ani(q_ptr,n,z_ptr,m,out_ptr):
+    # fetch the arrays via pointers and change to the right types
     q = my_module.asarray(ffi, q_ptr, shape=(1,na,3,)).tolist()
     z = my_module.asarray(ffi, z_ptr, shape=(1,na,)).tolist()
     out = my_module.asarray(ffi, out_ptr, shape=(1,3*na+1,))
     z = [[int(tmp) for tmp in z[0]]]
+    # set up NN calculation and run it
     coordinates = torch.tensor(q,requires_grad=True, device=device)
     species = torch.tensor(z,device=device)
+    # collect results
     energy = model((species, coordinates)).energies
     derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
     force = -derivative
+    # move results into output array
     out[0,0] = energy.item()
     for i in range(na):
         out[0,3*i+1] = force.squeeze()[i,0]

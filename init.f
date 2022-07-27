@@ -6,5 +6,7 @@
       end subroutine init
       end interface
 c
+c     Initialises the data for the NN
+c
       call init()
       end subroutine finit
