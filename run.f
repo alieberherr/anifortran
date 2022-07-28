@@ -8,7 +8,7 @@ c
 c     Test the subroutines for evaluating the NN
 c
       na = 5
-      nb = 2
+      nb = 3
       nf = 3*na
       imod = 1
       allocate(q(nf,nb),z(na),dvdq(nf,nb),v(nb),s(3))
@@ -42,16 +42,15 @@ c
       z(3) = 1
       z(4) = 1
       z(5) = 1
-      print "(3f20.10)",q
 
       dvdq = 0.d0 
       call aninit(s)
       call pot(q,z,v,dvdq)
       print *,"Energy:"
       print "(f20.10)",v
-      print *,"Force (1):"
-      print "(3f20.10)",dvdq(:,1)
-      print *,"Force (2):"
-      print "(3f20.10)",dvdq(:,2)
+      do ib=1,nb
+        print *,"Force",ib
+        print "(3f20.10)",dvdq(:,ib)
+      enddo
 
       end program test

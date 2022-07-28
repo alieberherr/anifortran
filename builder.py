@@ -1,9 +1,10 @@
 import cffi
 ffibuilder = cffi.FFI()
+import os
 
 header = """
 extern void pyaninit(double *);
-extern void test_ani(double *,int,double *,int,double *);
+extern void anipot(double *,int,double *,int,double *);
 """
 
 module = """
@@ -11,9 +12,41 @@ from my_plugin import ffi
 import numpy as np
 import sys
 sys.path.insert(0, ".")
-import my_module
 import torch
 import torchani
+######## MODULE: MY_MODULE
+import numpy as np
+
+# Create the dictionary mapping ctypes to np dtypes.
+ctype2dtype = {}
+# Integer types
+for prefix in ('int', 'uint'):
+    for log_bytes in range(4):
+        ctype = '%s%d_t' % (prefix, 8 * (2**log_bytes))
+        dtype = '%s%d' % (prefix[0], 2**log_bytes)
+        # print( ctype )
+        # print( dtype )
+        ctype2dtype[ctype] = np.dtype(dtype)
+
+# Floating point types
+ctype2dtype['float'] = np.dtype('f4')
+ctype2dtype['double'] = np.dtype('f8')
+
+
+def asarray(ffi, ptr, shape, **kwargs):
+    length = np.prod(shape)
+    # Get the canonical C type of the elements of ptr as a string.
+    T = ffi.getctype(ffi.typeof(ptr).item)
+    # print( T )
+    # print( ffi.sizeof( T ) )
+
+    if T not in ctype2dtype:
+        raise RuntimeError("Cannot create an array for element type: %s" % T)
+
+    a = np.frombuffer(ffi.buffer(ptr, length * ffi.sizeof(T)), ctype2dtype[T])\
+          .reshape(shape, **kwargs)
+    return a
+
 
 @ffi.def_extern()
 def pyaninit(s_ptr):
@@ -21,7 +54,7 @@ def pyaninit(s_ptr):
     global nb
     global device
     global model
-    s = my_module.asarray(ffi, s_ptr, shape=(3,))
+    s = asarray(ffi, s_ptr, shape=(3,))
     na = int(s[0])
     nb = int(s[1])
     imod = int(s[2])
@@ -39,15 +72,12 @@ def pyaninit(s_ptr):
         raise ValueError("invalid model, imod=%i"%imod)
 
 @ffi.def_extern()
-def test_ani(q_ptr,n,z_ptr,m,out_ptr):
+def anipot(q_ptr,n,z_ptr,m,out_ptr):
     # fetch the arrays via pointers and change to the right types
-    q = my_module.asarray(ffi, q_ptr, shape=(nb,na,3,)).tolist()
-    z = my_module.asarray(ffi, z_ptr, shape=(1,na,)).tolist()
-    out = my_module.asarray(ffi, out_ptr, shape=(nb,3*na+1,))
+    q = asarray(ffi, q_ptr, shape=(nb,na,3,)).tolist()
+    z = asarray(ffi, z_ptr, shape=(1,na,)).tolist()
+    out = asarray(ffi, out_ptr, shape=(nb,3*na+1,))
     z = [[int(tmp) for tmp in z[0]]]*nb
-    print("q (0):",q[0])
-    print("q (1):",q[1])
-    print("z:",z)
     # set up NN calculation and run it
     coordinates = torch.tensor(q,requires_grad=True, device=device)
     species = torch.tensor(z,device=device)
@@ -55,9 +85,6 @@ def test_ani(q_ptr,n,z_ptr,m,out_ptr):
     energy = model((species, coordinates)).energies
     derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
     force = -derivative
-    print("force:",force)
-    print("force 1:",force.squeeze()[0])
-    print("force 2:",force.squeeze()[1])
     # move results into output array
     for j in range(nb):
         out[j,0] = energy[j].item()
@@ -77,3 +104,4 @@ ffibuilder.set_source("my_plugin", r'''
 
 ffibuilder.embedding_init_code(module)
 ffibuilder.compile(target="libplugin.so", verbose=True)
+os.system('rm my_plugin.* plugin.h')
