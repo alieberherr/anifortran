@@ -84,14 +84,13 @@ def anipot(q_ptr,n,z_ptr,m,out_ptr):
     # collect results
     energy = model((species, coordinates)).energies
     derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
-    force = -derivative
     # move results into output array
     for j in range(nb):
         out[j,0] = energy[j].item()
         for i in range(na):
-            out[j,3*i+1] = force.squeeze()[j,i,0]
-            out[j,3*i+2] = force.squeeze()[j,i,1]
-            out[j,3*i+3] = force.squeeze()[j,i,2]
+            out[j,3*i+1] = derivative.squeeze()[j,i,0]
+            out[j,3*i+2] = derivative.squeeze()[j,i,1]
+            out[j,3*i+3] = derivative.squeeze()[j,i,2]
 """
 
 with open("plugin.h", "w") as f:
