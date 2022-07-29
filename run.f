@@ -8,7 +8,7 @@ c
 c     Test the subroutines for evaluating the NN
 c
       na = 5
-      nb = 3
+      read(5,*) nb
       nf = 3*na
       imod = 1
       allocate(q(nf,nb),z(na),dvdq(nf,nb),v(nb),s(3))
