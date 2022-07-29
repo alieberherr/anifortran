@@ -1,4 +1,4 @@
-# Use ANI neural networks with Fortran
+# Use ANI neural networks with Fortran (for MD)
 
 Usage:
 
