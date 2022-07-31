@@ -3,8 +3,9 @@ ffibuilder = cffi.FFI()
 import os
 
 header = """
-extern void pyaninit(double *);
-extern void anipot(double *,int,double *,int,double *);
+extern void caninit(double *);
+extern void canipot(double *,int,double *,int,double *);
+extern void canihes(double *,int,double *,int,double *,int,double *);
 """
 
 module = """
@@ -49,7 +50,7 @@ def asarray(ffi, ptr, shape, **kwargs):
 
 
 @ffi.def_extern()
-def pyaninit(s_ptr):
+def caninit(s_ptr):
     global na
     global nb
     global device
@@ -72,7 +73,7 @@ def pyaninit(s_ptr):
         raise ValueError("invalid model, imod=%i"%imod)
 
 @ffi.def_extern()
-def anipot(q_ptr,n,z_ptr,m,out_ptr):
+def canipot(q_ptr,n,z_ptr,m,out_ptr):
     # fetch the arrays via pointers and change to the right types
     q = asarray(ffi, q_ptr, shape=(nb,na,3,)).tolist()
     z = asarray(ffi, z_ptr, shape=(1,na,)).tolist()
@@ -91,6 +92,34 @@ def anipot(q_ptr,n,z_ptr,m,out_ptr):
             out[j,3*i+1] = derivative[j].squeeze()[i,0]
             out[j,3*i+2] = derivative[j].squeeze()[i,1]
             out[j,3*i+3] = derivative[j].squeeze()[i,2]
+
+@ffi.def_extern()
+def canihes(q_ptr,n,z_ptr,m,out_ptr,l,out2_ptr):
+    # fetch the arrays via pointers and change to the right types
+    q = asarray(ffi, q_ptr, shape=(nb,na,3,)).tolist()
+    z = asarray(ffi, z_ptr, shape=(1,na,)).tolist()
+    out = asarray(ffi, out_ptr, shape=(nb,3*na+1,))
+    out2 = asarray(ffi, out2_ptr, shape=(nb,3*na,3*na,))
+    z = [[int(tmp) for tmp in z[0]]]*nb
+    # set up NN calculation and run it
+    coordinates = torch.tensor(q,requires_grad=True, device=device)
+    species = torch.tensor(z,device=device)
+    # collect results
+    energy = model((species, coordinates)).energies
+    derivative = torch.autograd.grad(energy.sum(), coordinates)[0]
+    energy = model((species, coordinates)).energies
+    hessian = torchani.utils.hessian(coordinates, energies=energy)
+    # move results into output array
+    for j in range(nb):
+        out[j,0] = energy[j].item()
+        for i in range(na):
+            out[j,3*i+1] = derivative[j].squeeze()[i,0]
+            out[j,3*i+2] = derivative[j].squeeze()[i,1]
+            out[j,3*i+3] = derivative[j].squeeze()[i,2]
+        for i in range(3*na):
+            for k in range(3*na):
+                out2[j,i,k] = hessian[j].squeeze()[i,k].item()
+    print("hessian entry:",out2[0,:,:])
 """
 
 with open("plugin.h", "w") as f:
