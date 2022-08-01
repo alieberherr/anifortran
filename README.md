@@ -47,7 +47,7 @@ and create some environment variable which points to the libraries:
 
 `export ani=$HOME/lib/*`
 
-All of the above steps are contained in `build.sh`:
+All of the above steps are contained in `build.sh`, so the following line replaces the above:
 
 `. build.sh`
 
