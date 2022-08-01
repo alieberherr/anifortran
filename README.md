@@ -47,6 +47,10 @@ and create some environment variable which points to the libraries:
 
 `export ani=$HOME/lib/*`
 
+All of the above steps are contained in `build.sh`:
+
+`. build.sh`
+
 #### 4. Usage
 
 There are two methods, `aninit(s)` and `pot(q,z,v,dvdq)`, which can be used now.
