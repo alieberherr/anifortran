@@ -119,7 +119,6 @@ def canihes(q_ptr,n,z_ptr,m,out_ptr,l,out2_ptr):
         for i in range(3*na):
             for k in range(3*na):
                 out2[j,i,k] = hessian[j].squeeze()[i,k].item()
-    print("hessian entry:",out2[0,:,:])
 """
 
 with open("plugin.h", "w") as f:
