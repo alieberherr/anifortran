@@ -10,6 +10,7 @@ or download the .zip file (click dropdown menu "Code" and select lowest option).
 
 #### 2. Setting up
 
+Make sure you are using a Python version with the python-dev package available (for the C interfacing).
 Install `pytorch` and `torchani` with conda:
 
 `conda install pytorch`
@@ -36,41 +37,38 @@ This creates the shared library `libplugin.so`. Then, create the fortran library
 
 `ranlib libani.a`
 
-For general use, move the libraries to some home directory (eg. $HOME/lib and set the environment variable $LD_LIBRARY_PATH:
+For general use, move the libraries to some home directory (eg. $HOME/lib):
 
 `mkdir $HOME/lib`
 
 `mv lib* $HOME/lib`
 
-`export LD_LIBRARY_PATH=$HOME/lib:$LD_LIBRARY_PATH`
+and create some environment variable which points to the libraries:
+
+`export ani=$HOME/lib/*`
 
 #### 4. Usage
 
-There are two methods, `aninit(s)` and `pot(q,z,v,dvdq)`, which can be used now. The file `run.f` has an example program.
+There are two methods, `aninit(s)` and `pot(q,z,v,dvdq)`, which can be used now.
 
 The parameters are:
-- `aninit(s)`
-  - `s(3)`: array of number of atoms, number of beads and identifier for NN model (0: ANI-1x, 1: ANI-1ccx, 2: ANI-2x)
-- `pot(q,z,v,dvdq)`
-  - `q(nf,nb)`: coordinates of ring polymer beads
+- `aninit(na,nb,ipot)`
+  - `na`: number of atoms
+  - `nb`: number of ring polymer beads
+  - `ipot`: identifier for NN model (0: ANI-1x, 1: ANI-1ccx, 2: ANI-2x)
+- `pot(na,nb,q,z,v,dvdq)`
+  - `na`: number of atoms
+  - `nb`: number of ring polymer beads
+  - `q(3*na,nb)`: coordinates of ring polymer beads
   - `z(na)`: atom numbers
   - `v(nb)`: potential energy of each bead
-  - `dvdq(nf,nb)`: gradient for each bead
+  - `dvdq(3*na,nb)`: gradient for each bead
 
-In order for the program to recognise the libraries, we also have to create symbolic links (not happy with this but I couldn't come up with anything better)
+Now compile the program (for example named `run.f`)
 
-`ln -s $HOME/lib/libani.a /path/to/working/directory/libani.a`
-
-`ln -s $HOME/lib/libplugin.so /path/to/working/directory/libplugin.so`
-
-
-Now compile the program as (using the example program run.f from the repository)
-
-`gfortran -L./ -lplugin -lani -o run run.f`
+`gfortran -o run.x run.f $ani`
 
 and run
 
-`./run`
-
-The number of atoms, beads and model can be specified in `run.f`.
+`./run.x`
 
