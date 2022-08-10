@@ -33,7 +33,6 @@ c
         real(c_double) :: q_c(n),z_c(m),res_c(l)
       end subroutine canipot
       end interface
-      print *,"anipot> na,nb",na,nb
       call canipot(q,size(q),z,size(z),res,size(res))
       v = res(1,:)
       dvdq = res(2:3*na+1,:)
